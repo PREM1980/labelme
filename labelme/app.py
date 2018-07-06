@@ -266,6 +266,10 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
             'Create\nRectangle', self.setCreateRectangleMode,
             shortcuts['create_rectangle'], 'objects',
             'Start drawing rectangles', enabled=True)
+        createLineMode = action(
+            'Create\nLine', self.setCreateLineMode,
+            shortcuts['create_line'], 'objects',
+            'Start drawing lines', enabled=True)
         editMode = action('&Edit\nPolygons', self.setEditMode,
                           shortcuts['edit_polygon'], 'edit',
                           'Move and edit polygons', enabled=True)
@@ -367,6 +371,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
             addPoint=addPoint,
             createMode=createMode, editMode=editMode,
             createRectangleMode=createRectangleMode,
+            createLineMode=createLineMode,
             shapeLineColor=shapeLineColor, shapeFillColor=shapeFillColor,
             zoom=zoom, zoomIn=zoomIn, zoomOut=zoomOut, zoomOrg=zoomOrg,
             fitWindow=fitWindow, fitWidth=fitWidth,
@@ -376,12 +381,12 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
             editMenu=(edit, copy, delete, None, undo, undoLastPoint,
                       None, color1, color2),
             menu=(
-                createMode, createRectangleMode,
+                createMode, createRectangleMode, createLineMode,
                 editMode, edit, copy,
                 delete, shapeLineColor, shapeFillColor,
                 undo, undoLastPoint, addPoint,
             ),
-            onLoadActive=(close, createMode, createRectangleMode, editMode),
+            onLoadActive=(close, createMode, createRectangleMode, createLineMode, editMode),
             onShapesPresent=(saveAs, hideAll, showAll),
         )
 
@@ -416,7 +421,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         self.tools = self.toolbar('Tools')
         self.actions.tool = (
             open_, opendir, openNextImg, openPrevImg, save,
-            None, createMode, createRectangleMode,
+            None, createMode, createRectangleMode, createLineMode,
             copy, delete, editMode, undo, None,
             zoomIn, zoom, zoomOut, fitWindow, fitWidth)
 
@@ -589,15 +594,28 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         if createMode == 'polygon':
             self.actions.createMode.setEnabled(edit)
             self.actions.createRectangleMode.setEnabled(not edit)
+            self.actions.createLineMode.setEnabled(not edit)
         elif createMode == 'rectangle':
             self.actions.createMode.setEnabled(not edit)
             self.actions.createRectangleMode.setEnabled(edit)
+            self.actions.createLineMode.setEnabled(not edit)
+        elif createMode == 'line':
+            self.actions.createMode.setEnabled(not edit)
+            self.actions.createRectangleMode.setEnabled(not edit)
+            self.actions.createLineMode.setEnabled(edit)
         else:
             raise ValueError
+        if edit:
+            self.actions.createMode.setEnabled(edit)
+            self.actions.createRectangleMode.setEnabled(edit)
+            self.actions.createLineMode.setEnabled(edit)
         self.actions.editMode.setEnabled(not edit)
 
     def setCreateRectangleMode(self):
         self.toggleDrawMode(False, createMode='rectangle')
+    
+    def setCreateLineMode(self):
+        self.toggleDrawMode(False, createMode='line')
 
     def setCreateMode(self):
         self.toggleDrawMode(False, createMode='polygon')

@@ -161,6 +161,10 @@ class Canvas(QtWidgets.QWidget):
                     (self.current[0], pos)
                 ))
                 self.line.close()
+            elif self.createMode == 'line':
+                self.line[0] = self.current[-1]
+                self.line[1] = pos
+                self.line.close()
             else:
                 raise ValueError
             self.line.line_color = color
@@ -214,7 +218,7 @@ class Canvas(QtWidgets.QWidget):
                 self.setStatusTip(self.toolTip())
                 self.update()
                 break
-            elif shape.containsPoint(pos):
+            elif shape.containsPoint(pos) or index_edge is not None:
                 if self.selectedVertex():
                     self.hShape.highlightClear()
                 self.hVertex = None
@@ -269,6 +273,10 @@ class Canvas(QtWidgets.QWidget):
                         if self.current.isClosed():
                             self.finalise()
                     elif self.createMode == 'rectangle':
+                        assert len(self.current.points) == 1
+                        self.current.points = self.line.points
+                        self.finalise()
+                    elif self.createMode == 'line':
                         assert len(self.current.points) == 1
                         self.current.points = self.line.points
                         self.finalise()
@@ -360,7 +368,8 @@ class Canvas(QtWidgets.QWidget):
             shape.highlightVertex(index, shape.MOVE_VERTEX)
             return
         for shape in reversed(self.shapes):
-            if self.isVisible(shape) and shape.containsPoint(point):
+            index_edge = shape.nearestEdge(point, self.epsilon)
+            if self.isVisible(shape) and (shape.containsPoint(point) or index_edge is not None):
                 shape.selected = True
                 self.selectedShape = shape
                 self.calculateOffsets(shape, point)
@@ -616,6 +625,8 @@ class Canvas(QtWidgets.QWidget):
         if self.createMode == 'polygon':
             self.line.points = [self.current[-1], self.current[0]]
         elif self.createMode == 'rectangle':
+            self.current.points = self.current.points[0:1]
+        elif self.createMode == 'line':
             self.current.points = self.current.points[0:1]
         else:
             raise ValueError

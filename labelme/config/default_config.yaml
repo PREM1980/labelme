@@ -1,5 +1,5 @@
 auto_save: false
-store_data: true
+store_data: false
 keep_prev: false
 
 flags: null
@@ -28,6 +28,7 @@ shortcuts:
   add_point: Ctrl+Shift+P
   create_polygon: Ctrl+N
   create_rectangle: Ctrl+R
+  create_line: Ctrl+L
   edit_polygon: Ctrl+J
   delete_polygon: Delete
   duplicate_polygon: Ctrl+D
