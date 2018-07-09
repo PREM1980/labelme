@@ -32,6 +32,7 @@ from labelme.shape import DEFAULT_LINE_COLOR
 from labelme.shape import Shape
 from labelme.toolBar import ToolBar
 from labelme.zoomWidget import ZoomWidget
+from labelme.cli.yaml_to_json import YamlToJson
 
 
 # FIXME
@@ -906,6 +907,9 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
             self.errorMessage(
                 'Error opening file', 'No such file: <b>%s</b>' % filename)
             return False
+        # Converts yaml files to json
+#         YamlToJson(os.path.join(os.path.dirname(os.path.dirname(filename)), 'config'), 
+#                    os.path.basename(filename))
         # assumes same name, but json extension
         self.status("Loading %s..." % os.path.basename(str(filename)))
         label_file = os.path.splitext(filename)[0] + '.json'
@@ -962,7 +966,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         if self._config['flags']:
             self.loadFlags({k: False for k in self._config['flags']})
         if self._config['keep_prev']:
-            self.loadShapes(prev_shapes)
+            self.loadShapes(prev_shapes)        
         if self.labelFile:
             self.loadLabels(self.labelFile.shapes)
             if self.labelFile.flags is not None:

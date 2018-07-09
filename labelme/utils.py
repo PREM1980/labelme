@@ -1,6 +1,7 @@
 import base64
 import io
 import warnings
+import cv2
 
 import numpy as np
 import PIL.Image
@@ -176,3 +177,6 @@ def labelme_shapes_to_label(img_shape, shapes):
 
     lbl = shapes_to_label(img_shape, shapes, label_name_to_value)
     return lbl, label_name_to_value
+
+def get_image_dimensions(image_loc):
+    return cv2.imread(image_loc).shape

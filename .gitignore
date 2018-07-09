@@ -8,3 +8,8 @@
 *.py[cdo]
 
 .DS_Store
+.project
+.pydevproject
+.pylintrc
+
+
