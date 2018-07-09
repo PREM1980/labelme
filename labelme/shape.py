@@ -34,8 +34,9 @@ class Shape(object):
     point_size = 8
     scale = 1.0
 
-    def __init__(self, label=None, line_color=None):
+    def __init__(self, label=None, line_color=None, bnr_type=type):
         self.label = label
+        self.bnr_type = bnr_type
         self.points = []
         self.fill = False
         self.selected = False

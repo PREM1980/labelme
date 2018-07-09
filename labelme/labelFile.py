@@ -48,7 +48,7 @@ class LabelFile(object):
             lineColor = data['lineColor']
             fillColor = data['fillColor']
             shapes = (
-                (s['label'], s['points'], s['line_color'], s['fill_color'])
+                (s['label'], s['points'], s['line_color'], s['fill_color'], s['type'])
                 for s in data['shapes']
             )
         except Exception as e:

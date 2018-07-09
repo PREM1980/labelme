@@ -171,7 +171,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         if config['flags']:
             self.loadFlags({k: False for k in config['flags']})
         self.flag_dock.setWidget(self.flag_widget)
-        self.flag_widget.itemChanged.connect(self.setDirty)
+        self.flag_widget.itemChanged.connect(self.flagSelectionChanged)
 
         self.uniqLabelList = EscapableQListWidget()
         self.uniqLabelList.setToolTip(
@@ -733,8 +733,8 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
 
     def loadLabels(self, shapes):
         s = []
-        for label, points, line_color, fill_color in shapes:
-            shape = Shape(label=label)
+        for label, points, line_color, fill_color, type in shapes:
+            shape = Shape(label=label, bnr_type=type)
             for x, y in points:
                 shape.addPoint(QtCore.QPoint(x, y))
             shape.close()
@@ -804,6 +804,21 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
             self._noSelectionSlot = True
             shape = self.labelList.get_shape_from_item(item)
             self.canvas.selectShape(shape)
+
+    def flagSelectionChanged(self, item):
+        checked_items = []
+        for index in range(self.flag_widget.count()):
+            if self.flag_widget.item(index).checkState() == Qt.Checked:
+                checked_items.append(self.flag_widget.item(index).text())
+        for shape in self.canvas.shapes:
+            if shape.bnr_type in checked_items:
+                item = self.labelList.get_item_from_shape(shape)
+                item.setHidden(False)
+                self.canvas.setShapeVisible(shape, True)
+            else:
+                item = self.labelList.get_item_from_shape(shape)
+                item.setHidden(True)
+                self.canvas.setShapeVisible(shape, False)
 
     def labelItemChanged(self, item):
         shape = self.labelList.get_shape_from_item(item)
