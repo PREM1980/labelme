@@ -34,9 +34,12 @@ class Shape(object):
     point_size = 8
     scale = 1.0
 
-    def __init__(self, label=None, line_color=None, bnr_type=type):
+    def __init__(self, label=None, line_color=None, bnr_type=None,
+                 uuid=None, cust_display_name=None):
         self.label = label
         self.bnr_type = bnr_type
+        self.uuid = uuid
+        self.cust_display_name = cust_display_name
         self.points = []
         self.fill = False
         self.selected = False
@@ -198,3 +201,8 @@ class Shape(object):
 
     def __setitem__(self, key, value):
         self.points[key] = value
+
+    def __repr__(self):
+        return '''(label: {0}, id:{1}, bnr_type:{2},  
+                cust_display_name:{3})'''.format( 
+                self.label, self.uuid, self.bnr_type, self.cust_display_name)                

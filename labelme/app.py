@@ -86,6 +86,11 @@ class LabelQListWidget(QtWidgets.QListWidget):
             if item_ is item:
                 return shape
 
+    def get_shape_from_label(self, label):
+        for index, (item_, shape) in enumerate(self.itemsToShapes):
+            if shape.label is label:
+                return shape
+
     def get_item_from_shape(self, shape):
         for index, (item, shape_) in enumerate(self.itemsToShapes):
             if shape_ is shape:
@@ -644,38 +649,33 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         self.menus.labelList.exec_(self.labelList.mapToGlobal(point))
 
     def validateLabel(self, label):
-        # no validation
-        if self._config['validate_label'] is None:
-            return True
-
-        for i in range(self.uniqLabelList.count()):
-            label_i = self.uniqLabelList.item(i).text()
-            if self._config['validate_label'] in ['exact', 'instance']:
-                if label_i == label:
-                    return True
-            if self._config['validate_label'] == 'instance':
-                m = re.match(r'^{}-[0-9]*$'.format(label_i), label)
-                if m:
-                    return True
-        return False
+        return bool(re.match('^[a-zA-Z0-9\s]*$', label))
 
     def editLabel(self, item=None):
         if not self.canvas.editing():
             return
         item = item if item else self.currentItem()
-        text = self.labelDialog.popUp(item.text())
-        if text is None:
+        uuid, label, bnr_type, cust_display_name = self.labelDialog.popUp(item) or (None, None, None, None)
+        if label is None or cust_display_name is None:
             return
-        if not self.validateLabel(text):
+        if label is not None and not self.validateLabel(label):
             self.errorMessage('Invalid label',
-                              "Invalid label '{}' with validation type '{}'"
-                              .format(text, self._config['validate_label']))
+                              "Invalid label '{}' should be '{}'"
+                              .format(label, 'alphanumeric'))
+            label = None
             return
-        item.setText(text)
+        if cust_display_name is not None and not self.validateLabel(cust_display_name):
+            self.errorMessage('Invalid Customer display name',
+                              "Invalid Customer display name '{}' should be '{}'"
+                              .format(label, 'alphanumeric'))
+            cust_display_name = None
+            return
+        item.setText(label)
+        shape = self.labelList.get_shape_from_item(item)
+        shape.bnr_type = bnr_type
+        shape.cust_display_name = cust_display_name
+        shape.label = label
         self.setDirty()
-        if not self.uniqLabelList.findItems(text, Qt.MatchExactly):
-            self.uniqLabelList.addItem(text)
-            self.uniqLabelList.sortItems()
 
     def fileSelectionChanged(self):
         items = self.fileListWidget.selectedItems()
@@ -718,7 +718,6 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         if not self.uniqLabelList.findItems(shape.label, Qt.MatchExactly):
             self.uniqLabelList.addItem(shape.label)
             self.uniqLabelList.sortItems()
-        self.labelDialog.addLabelHistory(item.text())
         for action in self.actions.onShapesPresent:
             action.setEnabled(True)
 
@@ -733,8 +732,12 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
 
     def loadLabels(self, shapes):
         s = []
-        for label, points, line_color, fill_color, type in shapes:
-            shape = Shape(label=label, bnr_type=type)
+        for label, points, line_color, fill_color, type, \
+            cust_display_name, uuid in shapes:
+            shape = Shape(label=label,
+                          bnr_type=type,
+                          uuid=uuid,
+                          cust_display_name=cust_display_name)
             for x, y in points:
                 shape.addPoint(QtCore.QPoint(x, y))
             shape.close()
@@ -758,6 +761,9 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
 
         def format_shape(s):
             return dict(label=str(s.label),
+                        type=s.bnr_type,
+                        customer_display_name=s.cust_display_name,
+                        uuid=s.uuid,
                         line_color=s.line_color.getRgb()
                         if s.line_color != self.lineColor else None,
                         fill_color=s.fill_color.getRgb()
@@ -836,21 +842,22 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
 
         position MUST be in global coordinates.
         """
-        items = self.uniqLabelList.selectedItems()
-        text = None
-        if items:
-            text = items[0].text()
-        text = self.labelDialog.popUp(text)
-        if text is not None and not self.validateLabel(text):
+        uuid, label, bnr_type, cust_display_name = self.labelDialog.popUp() or (None, None, None, None)
+        if label is not None and not self.validateLabel(label):
             self.errorMessage('Invalid label',
-                              "Invalid label '{}' with validation type '{}'"
-                              .format(text, self._config['validate_label']))
-            text = None
-        if text is None:
+                              "Invalid label '{}' should be '{}'"
+                              .format(label, 'alphanumeric'))
+            label = None
+        if cust_display_name is not None and not self.validateLabel(cust_display_name):
+            self.errorMessage('Invalid Customer display name',
+                              "Invalid Customer display name '{}' should be '{}'"
+                              .format(label, 'alphanumeric'))
+            cust_display_name = None
+        if label is None or cust_display_name is None:
             self.canvas.undoLastLine()
             self.canvas.shapesBackups.pop()
         else:
-            self.addLabel(self.canvas.setLastLabel(text))
+            self.addLabel(self.canvas.setLastLabel(label, uuid, bnr_type, cust_display_name))
             self.actions.editMode.setEnabled(True)
             self.actions.undoLastPoint.setEnabled(False)
             self.actions.undo.setEnabled(True)
@@ -924,7 +931,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
             return False
         # Converts yaml files to json
 #         YamlToJson(os.path.join(os.path.dirname(os.path.dirname(filename)), 'config'), 
-#                    os.path.basename(filename))
+#                     os.path.basename(filename))
         # assumes same name, but json extension
         self.status("Loading %s..." % os.path.basename(str(filename)))
         label_file = os.path.splitext(filename)[0] + '.json'
@@ -986,6 +993,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
             self.loadLabels(self.labelFile.shapes)
             if self.labelFile.flags is not None:
                 self.loadFlags(self.labelFile.flags)
+                self.labelDialog.loadFlags(self.labelFile.flags)
         self.setClean()
         self.canvas.setEnabled(True)
         self.adjustScale(initial=True)
