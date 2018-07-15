@@ -169,6 +169,15 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         self.labelListContainer = QtWidgets.QWidget()
         self.labelListContainer.setLayout(listLayout)
 
+        self.cur_pos_dock = QtWidgets.QDockWidget('Cursor position', self)
+        self.cur_pos_dock.setObjectName('cursor')
+        self.cur_pos_label = QtWidgets.QLabel()
+        self.cur_pos_label.setStyleSheet('color: red')
+        self.cur_pos_font = QtGui.QFont()
+        self.cur_pos_font.setBold(True)
+        self.cur_pos_label.setFont(self.cur_pos_font)
+        self.cur_pos_dock.setWidget(self.cur_pos_label)
+
         self.flag_dock = self.flag_widget = None
         self.flag_dock = QtWidgets.QDockWidget('Flags', self)
         self.flag_dock.setObjectName('Flags')
@@ -177,19 +186,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
             self.loadFlags({k: False for k in config['flags']})
         self.flag_dock.setWidget(self.flag_widget)
         self.flag_widget.itemChanged.connect(self.flagSelectionChanged)
-
-        self.uniqLabelList = EscapableQListWidget()
-        self.uniqLabelList.setToolTip(
-            "Select label to start annotating for it. "
-            "Press 'Esc' to deselect.")
-        if self._config['labels']:
-            self.uniqLabelList.addItems(self._config['labels'])
-            self.uniqLabelList.sortItems()
-        self.labelsdock = QtWidgets.QDockWidget(u'Label List', self)
-        self.labelsdock.setObjectName(u'Label List')
-        self.labelsdock.setWidget(self.uniqLabelList)
-
-        self.dock = QtWidgets.QDockWidget('Polygon Labels', self)
+        self.dock = QtWidgets.QDockWidget('Labels', self)
         self.dock.setObjectName('Labels')
         self.dock.setWidget(self.labelListContainer)
 
@@ -224,11 +221,12 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         self.canvas.shapeMoved.connect(self.setDirty)
         self.canvas.selectionChanged.connect(self.shapeSelectionChanged)
         self.canvas.drawingPolygon.connect(self.toggleDrawingSensitive)
+        self.canvas.cursorPos.connect(self.setCursorPos)
 
         self.setCentralWidget(scrollArea)
 
+        self.addDockWidget(Qt.RightDockWidgetArea, self.cur_pos_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.flag_dock)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.labelsdock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.filedock)
         self.filedock.setFeatures(QtWidgets.QDockWidget.DockWidgetFloatable)
@@ -276,16 +274,16 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
             'Create\nLine', self.setCreateLineMode,
             shortcuts['create_line'], 'objects',
             'Start drawing lines', enabled=True)
-        editMode = action('&Edit\nPolygons', self.setEditMode,
+        editMode = action('&Edit\nShapes', self.setEditMode,
                           shortcuts['edit_polygon'], 'edit',
-                          'Move and edit polygons', enabled=True)
+                          'Move and edit shapes', enabled=True)
 
-        delete = action('Delete\nPolygon', self.deleteSelectedShape,
+        delete = action('Delete\nShapes', self.deleteSelectedShape,
                         shortcuts['delete_polygon'], 'cancel',
                         'Delete', enabled=False)
-        copy = action('&Duplicate\nPolygon', self.copySelectedShape,
+        copy = action('&Duplicate\nShapes', self.copySelectedShape,
                       shortcuts['duplicate_polygon'], 'copy',
-                      'Create a duplicate of the selected polygon',
+                      'Create a duplicate of the selected shapes',
                       enabled=False)
         undoLastPoint = action('Undo last point', self.canvas.undoLastPoint,
                                shortcuts['undo_last_point'], 'undo',
@@ -494,6 +492,9 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
 
     # Support Functions
 
+    def setCursorPos(self, x, y):
+        self.cur_pos_label.setText('X:' + str(x)+ ' ; Y:' + str(y))
+
     def noShapes(self):
         return not self.labelList.itemsToShapes
 
@@ -574,7 +575,6 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
     def undoShapeEdit(self):
         self.canvas.restoreShape()
         self.labelList.clear()
-        self.uniqLabelList.clear()
         self.loadShapes(self.canvas.shapes)
         self.actions.undo.setEnabled(self.canvas.isShapeRestorable)
 
@@ -715,9 +715,6 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         item.setCheckState(Qt.Checked)
         self.labelList.itemsToShapes.append((item, shape))
         self.labelList.addItem(item)
-        if not self.uniqLabelList.findItems(shape.label, Qt.MatchExactly):
-            self.uniqLabelList.addItem(shape.label)
-            self.uniqLabelList.sortItems()
         for action in self.actions.onShapesPresent:
             action.setEnabled(True)
 

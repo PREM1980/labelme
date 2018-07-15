@@ -83,7 +83,7 @@ class LabelDialog(QtWidgets.QDialog):
             text = text.strip()
         else:
             text = text.trimmed()
-        self.edit.setText(text)
+        self.cust_display_name_edit.setText(text)
     
     def popUp(self, item=None):
         

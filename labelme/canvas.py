@@ -27,6 +27,7 @@ class Canvas(QtWidgets.QWidget):
     shapeMoved = QtCore.Signal()
     drawingPolygon = QtCore.Signal(bool)
     edgeSelected = QtCore.Signal(bool)
+    cursorPos = QtCore.Signal(int, int)
 
     CREATE, EDIT = 0, 1
 
@@ -133,6 +134,7 @@ class Canvas(QtWidgets.QWidget):
 
         self.prevMovePoint = pos
         self.restoreCursor()
+        self.cursorPos.emit(pos.x(), pos.y())
 
         # Polygon drawing.
         if self.drawing():
