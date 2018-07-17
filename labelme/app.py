@@ -162,8 +162,15 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
 
         listLayout = QtWidgets.QVBoxLayout()
         listLayout.setContentsMargins(0, 0, 0, 0)
+        self.searchwidget = QtWidgets.QLineEdit()
+        self.searchwidget.setPlaceholderText('search labels')
+        self.searchwidget.editingFinished.connect(self.searchWidgetChanged)
+#         self.searchwidget.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.searchwidget.setClearButtonEnabled(True)
+#         self.searchwidget.addAction(QAction)
         self.editButton = QtWidgets.QToolButton()
         self.editButton.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        listLayout.addWidget(self.searchwidget)  # 0, Qt.AlignCenter)
         listLayout.addWidget(self.editButton)  # 0, Qt.AlignCenter)
         listLayout.addWidget(self.labelList)
         self.labelListContainer = QtWidgets.QWidget()
@@ -263,25 +270,25 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
                         shortcuts['edit_fill_color'], 'color',
                         'Choose polygon fill color')
 
-        createMode = action('Create\nPolygo&ns', self.setCreateMode,
+        createMode = action('Draw Polygo&ns', self.setCreateMode,
                             shortcuts['create_polygon'], 'objects',
                             'Start drawing polygons', enabled=True)
-        createRectangleMode = action(
-            'Create\nRectangle', self.setCreateRectangleMode,
-            shortcuts['create_rectangle'], 'objects',
-            'Start drawing rectangles', enabled=True)
+#         createRectangleMode = action(
+#             'Draw Rectangle', self.setCreateRectangleMode,
+#             shortcuts['create_rectangle'], 'objects',
+#             'Start drawing rectangles', enabled=True)
         createLineMode = action(
-            'Create\nLine', self.setCreateLineMode,
+            'Draw Line', self.setCreateLineMode,
             shortcuts['create_line'], 'objects',
             'Start drawing lines', enabled=True)
-        editMode = action('&Edit\nShapes', self.setEditMode,
+        editMode = action('&Edit Shapes', self.setEditMode,
                           shortcuts['edit_polygon'], 'edit',
                           'Move and edit shapes', enabled=True)
 
         delete = action('Delete\nShapes', self.deleteSelectedShape,
                         shortcuts['delete_polygon'], 'cancel',
                         'Delete', enabled=False)
-        copy = action('&Duplicate\nShapes', self.copySelectedShape,
+        copy = action('&Dup Shapes', self.copySelectedShape,
                       shortcuts['duplicate_polygon'], 'copy',
                       'Create a duplicate of the selected shapes',
                       enabled=False)
@@ -374,7 +381,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
             undoLastPoint=undoLastPoint, undo=undo,
             addPoint=addPoint,
             createMode=createMode, editMode=editMode,
-            createRectangleMode=createRectangleMode,
+#             createRectangleMode=createRectangleMode,
             createLineMode=createLineMode,
             shapeLineColor=shapeLineColor, shapeFillColor=shapeFillColor,
             zoom=zoom, zoomIn=zoomIn, zoomOut=zoomOut, zoomOrg=zoomOrg,
@@ -385,12 +392,17 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
             editMenu=(edit, copy, delete, None, undo, undoLastPoint,
                       None, color1, color2),
             menu=(
-                createMode, createRectangleMode, createLineMode,
+#                 createMode, createRectangleMode, createLineMode,
+                createMode,
+#                 createRectangleMode,
+                createLineMode,
                 editMode, edit, copy,
                 delete, shapeLineColor, shapeFillColor,
                 undo, undoLastPoint, addPoint,
             ),
-            onLoadActive=(close, createMode, createRectangleMode, createLineMode, editMode),
+            onLoadActive=(close, createMode,
+#                           createRectangleMode,
+                        createLineMode, editMode),
             onShapesPresent=(saveAs, hideAll, showAll),
         )
 
@@ -425,7 +437,9 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         self.tools = self.toolbar('Tools')
         self.actions.tool = (
             open_, opendir, openNextImg, openPrevImg, save,
-            None, createMode, createRectangleMode, createLineMode,
+            None, createMode,
+#             createRectangleMode
+            createLineMode,
             copy, delete, editMode, undo, None,
             zoomIn, zoom, zoomOut, fitWindow, fitWidth)
 
@@ -507,7 +521,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         self.menus.edit.clear()
         actions = (
             self.actions.createMode,
-            self.actions.createRectangleMode,
+#             self.actions.createRectangleMode,
             self.actions.editMode,
         )
         addActions(self.menus.edit, actions + self.actions.editMenu)
@@ -529,7 +543,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         self.dirty = False
         self.actions.save.setEnabled(False)
         self.actions.createMode.setEnabled(True)
-        self.actions.createRectangleMode.setEnabled(True)
+#         self.actions.createRectangleMode.setEnabled(True)
         title = __appname__
         if self.filename is not None:
             title = '{} - {}'.format(title, self.filename)
@@ -677,6 +691,23 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         shape.label = label
         self.setDirty()
 
+    def searchWidgetChanged(self):
+        sender = self.sender()
+        items = self.labelList.findItems(sender.displayText(), Qt.MatchContains)
+        checked_items = [item.text() for item in items]
+        self._search_shapes_for_labels(checked_items)
+
+    def _search_shapes_for_labels(self, checked_items):
+        for shape in self.canvas.shapes:
+            if shape.label in checked_items:
+                item = self.labelList.get_item_from_shape(shape)
+                item.setHidden(False)
+                self.canvas.setShapeVisible(shape, True)
+            else:
+                item = self.labelList.get_item_from_shape(shape)
+                item.setHidden(True)
+                self.canvas.setShapeVisible(shape, False)
+
     def fileSelectionChanged(self):
         items = self.fileListWidget.selectedItems()
         if not items:
@@ -813,15 +844,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         for index in range(self.flag_widget.count()):
             if self.flag_widget.item(index).checkState() == Qt.Checked:
                 checked_items.append(self.flag_widget.item(index).text())
-        for shape in self.canvas.shapes:
-            if shape.bnr_type in checked_items:
-                item = self.labelList.get_item_from_shape(shape)
-                item.setHidden(False)
-                self.canvas.setShapeVisible(shape, True)
-            else:
-                item = self.labelList.get_item_from_shape(shape)
-                item.setHidden(True)
-                self.canvas.setShapeVisible(shape, False)
+        self._search_shapes_for_labeles(self, checked_items)
 
     def labelItemChanged(self, item):
         shape = self.labelList.get_shape_from_item(item)
