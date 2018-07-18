@@ -37,11 +37,13 @@ class LabelDialog(QtWidgets.QDialog):
         self.label = QtWidgets.QLabel('Label')            
         self.bnr_type = QtWidgets.QLabel('Type')
         self.cust_display_name = QtWidgets.QLabel('Customer Display Name')        
+        self.pts_display = QtWidgets.QLabel('Points')
         self.uuid_edit = QtWidgets.QLineEdit()
         self.label_edit = QtWidgets.QLineEdit()
         self.bnr_type_edit = QtWidgets.QComboBox()        
         self.cust_display_name_edit = QtWidgets.QLineEdit()
         self.cust_display_name_edit.editingFinished.connect(self.postProcess)
+        self.pts_display_edit = QtWidgets.QLineEdit()
         grid = QtWidgets.QGridLayout()
         grid.setSpacing(10)
         grid.addWidget(self.uuid, 1, 0)
@@ -52,6 +54,8 @@ class LabelDialog(QtWidgets.QDialog):
         grid.addWidget(self.bnr_type_edit, 3, 1)                
         grid.addWidget(self.cust_display_name, 4, 0)
         grid.addWidget(self.cust_display_name_edit, 4, 1)                
+        grid.addWidget(self.pts_display, 5, 0)
+        grid.addWidget(self.pts_display_edit, 5, 1)
         # buttons
         self.buttonBox = bb = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel,
@@ -62,8 +66,9 @@ class LabelDialog(QtWidgets.QDialog):
         bb.button(bb.Cancel).setIcon(newIcon('undo'))
         bb.accepted.connect(self.validate)
         bb.rejected.connect(self.reject)
-        grid.addWidget(bb, 5,0)
+        grid.addWidget(bb, 6,0)
         self.setLayout(grid)
+        self.resize(QtCore.QSize(600,400))
 
     def loadFlags(self, flags):
         self.bnr_type_edit.addItems(flags.keys())
@@ -94,10 +99,11 @@ class LabelDialog(QtWidgets.QDialog):
             self.cust_display_name_edit.setText('')
         else:
             shape = self.parent.labelList.get_shape_from_item(item)
+            pts = [[each.x(), each.y()] for each in shape.points]
+            self.pts_display_edit.setText(' , '.join(str(each) for each in pts))
             self.uuid_edit.setText(str(shape.uuid))
             self.label_edit.setText(shape.label)
             index = self.bnr_type_edit.findText(shape.bnr_type, QtCore.Qt.MatchFixedString)
-              
             if index >= 0:
                 self.bnr_type_edit.setCurrentIndex(index)
     #         self.type_edit.setText(item.bnr_type)    
