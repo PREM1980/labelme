@@ -277,6 +277,10 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
 #             'Draw Rectangle', self.setCreateRectangleMode,
 #             shortcuts['create_rectangle'], 'objects',
 #             'Start drawing rectangles', enabled=True)
+        createPosesMode = action(
+            'Draw Poses', self.setCreatePosesMode,
+            shortcuts['create_pose'], 'objects',
+            'Start drawing poses', enabled=True)
         createLineMode = action(
             'Draw Line', self.setCreateLineMode,
             shortcuts['create_line'], 'objects',
@@ -383,6 +387,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
             createMode=createMode, editMode=editMode,
 #             createRectangleMode=createRectangleMode,
             createLineMode=createLineMode,
+            createPosesMode=createPosesMode,
             shapeLineColor=shapeLineColor, shapeFillColor=shapeFillColor,
             zoom=zoom, zoomIn=zoomIn, zoomOut=zoomOut, zoomOrg=zoomOrg,
             fitWindow=fitWindow, fitWidth=fitWidth,
@@ -396,13 +401,16 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
                 createMode,
 #                 createRectangleMode,
                 createLineMode,
+                createPosesMode,
                 editMode, edit, copy,
                 delete, shapeLineColor, shapeFillColor,
                 undo, undoLastPoint, addPoint,
             ),
             onLoadActive=(close, createMode,
 #                           createRectangleMode,
-                        createLineMode, editMode),
+                            createLineMode,
+                            createPosesMode,
+                            editMode),
             onShapesPresent=(saveAs, hideAll, showAll),
         )
 
@@ -440,6 +448,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
             None, createMode,
 #             createRectangleMode
             createLineMode,
+            createPosesMode,
             copy, delete, editMode, undo, None,
             zoomIn, zoom, zoomOut, fitWindow, fitWidth)
 
@@ -506,8 +515,8 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
 
     # Support Functions
 
-    def setCursorPos(self, x, y):
-        self.cur_pos_label.setText('X:' + str(x)+ ' ; Y:' + str(y))
+    def setCursorPos(self, x, y, angle):
+        self.cur_pos_label.setText('X:' + str(x)+ ' ; Y:' + str(y) + ' ; Angle(degrees) ' + str(angle))
 
     def noShapes(self):
         return not self.labelList.itemsToShapes
@@ -611,29 +620,42 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
     def toggleDrawMode(self, edit=True, createMode='polygon'):
         self.canvas.setEditing(edit)
         self.canvas.createMode = createMode
+        self.createMode = createMode
         if createMode == 'polygon':
             self.actions.createMode.setEnabled(edit)
-            self.actions.createRectangleMode.setEnabled(not edit)
+#             self.actions.createRectangleMode.setEnabled(not edit)
             self.actions.createLineMode.setEnabled(not edit)
+            self.actions.createPosesMode.setEnabled(not edit)
         elif createMode == 'rectangle':
             self.actions.createMode.setEnabled(not edit)
-            self.actions.createRectangleMode.setEnabled(edit)
+#             self.actions.createRectangleMode.setEnabled(edit)
             self.actions.createLineMode.setEnabled(not edit)
+            self.actions.createPosesMode.setEnabled(not edit)
         elif createMode == 'line':
             self.actions.createMode.setEnabled(not edit)
-            self.actions.createRectangleMode.setEnabled(not edit)
+#             self.actions.createRectangleMode.setEnabled(not edit)
             self.actions.createLineMode.setEnabled(edit)
+            self.actions.createPosesMode.setEnabled(not edit)
+        elif createMode == 'poses':
+            self.actions.createMode.setEnabled(not edit)
+#             self.actions.createRectangleMode.setEnabled(not edit)
+            self.actions.createLineMode.setEnabled(not edit)
+            self.actions.createPosesMode.setEnabled(edit)
         else:
             raise ValueError
         if edit:
             self.actions.createMode.setEnabled(edit)
-            self.actions.createRectangleMode.setEnabled(edit)
+#             self.actions.createRectangleMode.setEnabled(edit)
             self.actions.createLineMode.setEnabled(edit)
+            self.actions.createPosesMode.setEnabled(edit)
         self.actions.editMode.setEnabled(not edit)
 
     def setCreateRectangleMode(self):
         self.toggleDrawMode(False, createMode='rectangle')
     
+    def setCreatePosesMode(self):
+        self.toggleDrawMode(False, createMode='poses')
+
     def setCreateLineMode(self):
         self.toggleDrawMode(False, createMode='line')
 
@@ -699,7 +721,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
 
     def _search_shapes_for_labels(self, checked_items):
         for shape in self.canvas.shapes:
-            if shape.label in checked_items:
+            if shape.label in checked_items or shape.bnr_type in checked_items:
                 item = self.labelList.get_item_from_shape(shape)
                 item.setHidden(False)
                 self.canvas.setShapeVisible(shape, True)
@@ -844,7 +866,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         for index in range(self.flag_widget.count()):
             if self.flag_widget.item(index).checkState() == Qt.Checked:
                 checked_items.append(self.flag_widget.item(index).text())
-        self._search_shapes_for_labeles(self, checked_items)
+        self._search_shapes_for_labels(checked_items)
 
     def labelItemChanged(self, item):
         shape = self.labelList.get_shape_from_item(item)

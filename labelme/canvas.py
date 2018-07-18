@@ -5,6 +5,7 @@ from qtpy import QtWidgets
 from labelme.compat import QT5
 from labelme.lib import distance
 from labelme.shape import Shape
+from PyQt5.Qt import QPointF
 
 
 # TODO(unknown):
@@ -27,7 +28,7 @@ class Canvas(QtWidgets.QWidget):
     shapeMoved = QtCore.Signal()
     drawingPolygon = QtCore.Signal(bool)
     edgeSelected = QtCore.Signal(bool)
-    cursorPos = QtCore.Signal(int, int)
+    cursorPos = QtCore.Signal(int, int, float)
 
     CREATE, EDIT = 0, 1
 
@@ -134,7 +135,11 @@ class Canvas(QtWidgets.QWidget):
 
         self.prevMovePoint = pos
         self.restoreCursor()
-        self.cursorPos.emit(pos.x(), pos.y())
+        import math
+        angleDeg = 0
+        if self.current:
+            angleDeg = math.atan2(pos.y() - self.current[-1].y(), pos.x() - self.current[-1].x()) * 180 / math.pi;
+        self.cursorPos.emit(pos.x(), pos.y(), angleDeg)
 
         # Polygon drawing.
         if self.drawing():
@@ -167,6 +172,16 @@ class Canvas(QtWidgets.QWidget):
                 self.line[0] = self.current[-1]
                 self.line[1] = pos
                 self.line.close()
+            elif self.createMode == 'poses':
+                self.line[0] = self.current[-1]
+                self.line[1] = pos
+                dx = self.line[1].x() - self.line[0].x()
+                dy = self.line[1].y() - self.line[0].y()
+                v_norm = math.sqrt(dx**2+dy**2)
+                distance = 50
+                point_on_line = [self.line[0].x() + distance * dx / v_norm, self.line[0].y() + distance * dy / v_norm]
+                self.line[1] = QPointF(point_on_line[0], point_on_line[1])
+                self.line.bnr_type = 'poses'
             else:
                 raise ValueError
             self.line.line_color = color
@@ -281,6 +296,12 @@ class Canvas(QtWidgets.QWidget):
                     elif self.createMode == 'line':
                         assert len(self.current.points) == 1
                         self.current.points = self.line.points
+                        self.finalise()
+                    elif self.createMode == 'poses':
+                        assert len(self.current.points) == 1
+                        self.current.points = self.line.points
+                        # Only for pose the bnr_type is set to avoid drawing vertex on arrows.
+                        self.current.bnr_type = 'poses'
                         self.finalise()
                     else:
                         raise ValueError
@@ -632,6 +653,8 @@ class Canvas(QtWidgets.QWidget):
         elif self.createMode == 'rectangle':
             self.current.points = self.current.points[0:1]
         elif self.createMode == 'line':
+            self.current.points = self.current.points[0:1]
+        elif self.createMode == 'poses':
             self.current.points = self.current.points[0:1]
         else:
             raise ValueError

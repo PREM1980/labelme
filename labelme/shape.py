@@ -1,4 +1,4 @@
-from qtpy import QtGui
+from qtpy import QtGui, QtCore
 
 from labelme.lib import distance
 from labelme.lib import distancetoline
@@ -105,7 +105,10 @@ class Shape(object):
 
             for i, p in enumerate(self.points):
                 line_path.lineTo(p)
-                self.drawVertex(vrtx_path, i)
+                if self.bnr_type == 'poses' and i == 1:
+                    self.drawArrows(vrtx_path, i)
+                else:
+                    self.drawVertex(vrtx_path, i)
             if self.isClosed():
                 line_path.lineTo(self.points[0])
 
@@ -134,6 +137,28 @@ class Shape(object):
             path.addEllipse(point, d / 2.0, d / 2.0)
         else:
             assert False, "unsupported vertex shape"
+
+    def drawArrows(self, path, i):
+        d = self.point_size / self.scale
+        shape = self.point_type
+        point = self.points[i]
+        if i == self._highlightIndex:
+            size, shape = self._highlightSettings[self._highlightMode]
+            d *= size
+        if self._highlightIndex is not None:
+            self.vertex_fill_color = self.hvertex_fill_color
+        else:
+            self.vertex_fill_color = Shape.vertex_fill_color
+        line = QtCore.QLineF(self.points[i-1], self.points[i])
+        nv = line.normalVector()
+        nv.setLength(5)
+        pv = line.unitVector()
+        pv.setLength(30)
+        p = line.p2() - QtCore.QPointF(pv.dx(), pv.dy())
+        x1, x2 = (p + i*QtCore.QPointF(nv.dx(), nv.dy()) for i in (1, -1))
+        path.moveTo(x1)
+        path.lineTo(line.p2())
+        path.lineTo(x2)
 
     def nearestVertex(self, point, epsilon):
         min_distance = float('inf')
