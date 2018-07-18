@@ -43,7 +43,7 @@ class LabelFile(object):
                                          data['imagePath'])
                 with open(imagePath, 'rb') as f:
                     imageData = f.read()
-            flags = data.get('flags')
+#             flags = data.get('flags')
             imagePath = data['imagePath']
             lineColor = data['lineColor']
             fillColor = data['fillColor']
@@ -61,7 +61,7 @@ class LabelFile(object):
                 otherData[key] = value
 
         # Only replace data after everything is loaded.
-        self.flags = flags
+#         self.flags = flags
         self.shapes = shapes
         self.imagePath = imagePath
         self.imageData = imageData
@@ -80,7 +80,7 @@ class LabelFile(object):
         if flags is None:
             flags = []
         data = dict(
-            flags=flags,
+#             flags=flags,
             shapes=shapes,
             lineColor=lineColor,
             fillColor=fillColor,

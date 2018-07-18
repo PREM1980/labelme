@@ -186,7 +186,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         self.cur_pos_dock.setWidget(self.cur_pos_label)
 
         self.flag_dock = self.flag_widget = None
-        self.flag_dock = QtWidgets.QDockWidget('Flags', self)
+        self.flag_dock = QtWidgets.QDockWidget('Filters', self)
         self.flag_dock.setObjectName('Flags')
         self.flag_widget = QtWidgets.QListWidget()
         if config['flags']:
@@ -798,12 +798,15 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
                 shape.fill_color = QtGui.QColor(*fill_color)
         self.loadShapes(s)
 
-    def loadFlags(self, flags):
+    def loadFlags(self, flags, check=False):
         self.flag_widget.clear()
         for key, flag in flags.items():
             item = QtWidgets.QListWidgetItem(key)
             item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-            item.setCheckState(Qt.Checked if flag else Qt.Unchecked)
+            if check:
+                item.setCheckState(Qt.Checked if flag else Qt.Unchecked)
+            else:
+                item.setCheckState(Qt.Unchecked if flag else Qt.Checked)
             self.flag_widget.addItem(item)
 
     def saveLabels(self, filename):
@@ -1030,12 +1033,19 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         if self._config['flags']:
             self.loadFlags({k: False for k in self._config['flags']})
         if self._config['keep_prev']:
-            self.loadShapes(prev_shapes)        
+            self.loadShapes(prev_shapes)
+        # TODO move this settings
+        flags = {"aisle": True, "poses": True, "clear_zone": True, "exclusion_zone": True}
         if self.labelFile:
             self.loadLabels(self.labelFile.shapes)
-            if self.labelFile.flags is not None:
-                self.loadFlags(self.labelFile.flags)
-                self.labelDialog.loadFlags(self.labelFile.flags)
+            print 'herre'
+            self.loadFlags(flags, True)
+        else:
+            print 'there'
+            self.loadFlags(flags, False)
+#             if self.labelFile.flags is not None:
+#         self.loadFlags(flags)
+        self.labelDialog.loadFlags(flags)
         self.setClean()
         self.canvas.setEnabled(True)
         self.adjustScale(initial=True)
