@@ -1,3 +1,4 @@
+import math
 from qtpy import QtCore
 from qtpy import QtGui
 from qtpy import QtWidgets
@@ -135,11 +136,6 @@ class Canvas(QtWidgets.QWidget):
 
         self.prevMovePoint = pos
         self.restoreCursor()
-        import math
-        angleDeg = 0
-        if self.current:
-            angleDeg = math.atan2(pos.y() - self.current[-1].y(), pos.x() - self.current[-1].x()) * 180 / math.pi;
-        self.cursorPos.emit(pos.x(), pos.y(), angleDeg)
 
         # Polygon drawing.
         if self.drawing():
@@ -253,6 +249,18 @@ class Canvas(QtWidgets.QWidget):
                 self.update()
             self.hVertex, self.hShape, self.hEdge = None, None, None
         self.edgeSelected.emit(self.hEdge is not None)
+
+        angleDeg = 0
+        # Display angle if hover a poses
+        if self.hShape:
+            if self.hShape.bnr_type == 'poses':
+                angleDeg = math.atan2(self.hShape.points[1].y() - self.hShape.points[0].y(),
+                                      self.hShape.points[1].x() - self.hShape.points[0].x()) * 180 / math.pi;
+
+        if self.current:
+            angleDeg = math.atan2(pos.y() - self.current[-1].y(), pos.x() - self.current[-1].x()) * 180 / math.pi;
+        self.cursorPos.emit(pos.x(), pos.y(), angleDeg)
+
 
     def addPointToEdge(self):
         if (self.hShape is None and
