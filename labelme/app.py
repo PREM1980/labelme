@@ -19,6 +19,7 @@ from labelme.colorDialog import ColorDialog
 from labelme.compat import QT5
 from labelme.config import get_config
 from labelme.labelDialog import LabelDialog
+from labelme.metaDialog import MetaDialog
 from labelme.labelFile import LabelFile
 from labelme.labelFile import LabelFileError
 from labelme.lib import addActions
@@ -63,7 +64,7 @@ class WindowMixin(object):
         toolbar.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         if actions:
             addActions(toolbar, actions)
-        self.addToolBar(Qt.LeftToolBarArea, toolbar)
+        self.addToolBar(Qt.TopToolBarArea, toolbar)
         return toolbar
 
 
@@ -84,11 +85,6 @@ class LabelQListWidget(QtWidgets.QListWidget):
     def get_shape_from_item(self, item):
         for index, (item_, shape) in enumerate(self.itemsToShapes):
             if item_ is item:
-                return shape
-
-    def get_shape_from_label(self, label):
-        for index, (item_, shape) in enumerate(self.itemsToShapes):
-            if shape.label is label:
                 return shape
 
     def get_item_from_shape(self, shape):
@@ -147,6 +143,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
             sort_labels=self._config['sort_labels'],
             show_text_field=self._config['show_label_text_field'],
         )
+        self.metadialog = MetaDialog(parent=self)
 
         self.labelList = LabelQListWidget()
         self.lastOpenDir = None
@@ -184,6 +181,12 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         self.cur_pos_font.setBold(True)
         self.cur_pos_label.setFont(self.cur_pos_font)
         self.cur_pos_dock.setWidget(self.cur_pos_label)
+        self.map_meta_dock = QtWidgets.QDockWidget('Map Metadata', self)
+        self.map_meta_dock.setObjectName('map_metadata')
+        self.map_meta_button = QtWidgets.QPushButton('Click here', self)
+        self.map_meta_button.setDisabled(True)
+        self.map_meta_button.clicked.connect(self.meta_dialog)
+        self.map_meta_dock.setWidget(self.map_meta_button)
 
         self.flag_dock = self.flag_widget = None
         self.flag_dock = QtWidgets.QDockWidget('Filters', self)
@@ -232,6 +235,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
 
         self.setCentralWidget(scrollArea)
 
+        self.addDockWidget(Qt.RightDockWidgetArea, self.map_meta_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.cur_pos_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.flag_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.dock)
@@ -469,6 +473,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         self.lineColor = None
         self.fillColor = None
         self.otherData = None
+        self.meta = None
         self.zoom_level = 100
         self.fit_window = False
 
@@ -514,6 +519,12 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         #    QWhatsThis.enterWhatsThisMode()
 
     # Support Functions
+
+    def meta_dialog(self):
+        self.meta = self.metadialog.popUp(meta=self.meta)
+        if self.meta:
+#         if cmp(self.meta,self.metadialog.popUp(meta=self.meta)) != 0:
+            self.setDirty()
 
     def setCursorPos(self, x, y, angle):
         self.cur_pos_label.setText('X:' + str(x)+ ' ; Y:' + str(y) + ' ; Angle(degrees) ' + str(angle))
@@ -774,6 +785,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
     def remLabel(self, shape):
         item = self.labelList.get_item_from_shape(shape)
         self.labelList.takeItem(self.labelList.row(item))
+        self.toggleFlags()
 
     def loadShapes(self, shapes):
         for shape in shapes:
@@ -799,15 +811,22 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         self.loadShapes(s)
 
     def loadFlags(self, flags, check=False):
-        self.flag_widget.clear()
         for key, flag in flags.items():
             item = QtWidgets.QListWidgetItem(key)
-            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-            if check:
-                item.setCheckState(Qt.Checked if flag else Qt.Unchecked)
-            else:
-                item.setCheckState(Qt.Unchecked if flag else Qt.Checked)
+#             item.setFlags(item.flags() & ~Qt.ItemIsEnabled)
+            item.setFlags(item.flags() & ~Qt.ItemIsSelectable)
             self.flag_widget.addItem(item)
+        self.toggleFlags()
+
+    def toggleFlags(self):
+        self.uniq_flags = set()
+        for item, shape in self.labelList.itemsToShapes:
+            self.uniq_flags.add(shape.bnr_type)
+        for each in self.uniq_flags:
+            item = self.flag_widget.findItems(each, QtCore.Qt.MatchRegExp)
+            item[0].setFlags(item[0].flags() | Qt.ItemIsEnabled & Qt.ItemIsUserCheckable)
+#             item[0].setFlags(item[0].flags() | )
+            item[0].setCheckState(Qt.Checked)
 
     def saveLabels(self, filename):
         lf = LabelFile()
@@ -822,7 +841,6 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
                         fill_color=s.fill_color.getRgb()
                         if s.fill_color != self.fillColor else None,
                         points=[(p.x(), p.y()) for p in s.points])
-
         shapes = [format_shape(shape) for shape in self.labelList.shapes]
         flags = {}
         for i in range(self.flag_widget.count()):
@@ -843,6 +861,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
                 fillColor=self.fillColor.getRgb(),
                 otherData=self.otherData,
                 flags=flags,
+                meta=self.meta
             )
             self.labelFile = lf
             # disable allows next and previous image to proceed
@@ -903,6 +922,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
             self.canvas.shapesBackups.pop()
         else:
             self.addLabel(self.canvas.setLastLabel(label, uuid, bnr_type, cust_display_name))
+            self.toggleFlags()
             self.actions.editMode.setEnabled(True)
             self.actions.undoLastPoint.setEnabled(False)
             self.actions.undo.setEnabled(True)
@@ -1006,6 +1026,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
             self.lineColor = QtGui.QColor(*self.labelFile.lineColor)
             self.fillColor = QtGui.QColor(*self.labelFile.fillColor)
             self.otherData = self.labelFile.otherData
+            self.meta = self.labelFile.meta
         else:
             # Load image:
             # read data first and store for saving into label file.
@@ -1038,13 +1059,12 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         flags = {"aisle": True, "poses": True, "clear_zone": True, "exclusion_zone": True}
         if self.labelFile:
             self.loadLabels(self.labelFile.shapes)
-            print 'herre'
             self.loadFlags(flags, True)
         else:
-            print 'there'
             self.loadFlags(flags, False)
 #             if self.labelFile.flags is not None:
 #         self.loadFlags(flags)
+        self.map_meta_button.setEnabled(True)
         self.labelDialog.loadFlags(flags)
         self.setClean()
         self.canvas.setEnabled(True)

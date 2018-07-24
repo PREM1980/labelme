@@ -1,5 +1,7 @@
 from math import sqrt
 import os.path as osp
+import re
+import uuid
 
 import numpy as np
 
@@ -85,3 +87,6 @@ def distancetoline(point, line):
 def fmtShortcut(text):
     mod, key = text.split('+', 1)
     return '<b>%s</b>+<b>%s</b>' % (mod, key)
+
+def getUUID():
+    return str(uuid.uuid1())
