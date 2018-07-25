@@ -92,6 +92,21 @@ class LabelQListWidget(QtWidgets.QListWidget):
             if shape_ is shape:
                 return item
 
+    def delete_item_from_itemsToShapes(self, item):
+        for index, (item_, shape) in enumerate(self.itemsToShapes):
+            if item_ is item:
+                break
+        del self.itemsToShapes[index]
+
+    def get_uniq_labels(self):
+        uniq_labels_by_types = {}
+        for index, (item, shape) in enumerate(self.itemsToShapes):
+            if shape.bnr_type in uniq_labels_by_types:
+                uniq_labels_by_types[shape.bnr_type].append(shape.label)
+            else:
+                uniq_labels_by_types[shape.bnr_type] = [shape.label]
+        return uniq_labels_by_types
+
     def clear(self):
         super(LabelQListWidget, self).clear()
         self.itemsToShapes = []
@@ -253,13 +268,13 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
                       'Quit application')
         open_ = action('&Open', self.openFile, shortcuts['open'], 'open',
                        'Open image or label file')
-        opendir = action('&Open Dir', self.openDirDialog,
-                         shortcuts['open_dir'], 'open', u'Open Dir')
-        openNextImg = action('&Next Image', self.openNextImg,
-                             shortcuts['open_next'], 'next', u'Open Next')
-
-        openPrevImg = action('&Prev Image', self.openPrevImg,
-                             shortcuts['open_prev'], 'prev', u'Open Prev')
+#         opendir = action('&Open Dir', self.openDirDialog,
+#                          shortcuts['open_dir'], 'open', u'Open Dir')
+#         openNextImg = action('&Next Image', self.openNextImg,
+#                              shortcuts['open_next'], 'next', u'Open Next')
+#
+#         openPrevImg = action('&Prev Image', self.openPrevImg,
+#                              shortcuts['open_prev'], 'prev', u'Open Prev')
         save = action('&Save', self.saveFile, shortcuts['save'], 'save',
                       'Save labels to file', enabled=False)
         saveAs = action('&Save As', self.saveFileAs, shortcuts['save_as'],
@@ -274,7 +289,16 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
                         shortcuts['edit_fill_color'], 'color',
                         'Choose polygon fill color')
 
-        createMode = action('Draw Polygo&ns', self.setCreateMode,
+        createModeShelves = action('Shelves', self.setCreateModeShelves,
+                            shortcuts['create_polygon'], 'objects',
+                            'Start drawing polygons', enabled=True)
+        createModeExclusion = action('Excl zone', self.setCreateModeExclusion,
+                            shortcuts['create_polygon'], 'objects',
+                            'Start drawing polygons', enabled=True)
+        createModeClear = action('Clear zone', self.setCreateModeClear,
+                            shortcuts['create_polygon'], 'objects',
+                            'Start drawing polygons', enabled=True)
+        createModeLightsOff = action('Lights off', self.setCreateModeLightsOff,
                             shortcuts['create_polygon'], 'objects',
                             'Start drawing polygons', enabled=True)
 #         createRectangleMode = action(
@@ -282,11 +306,11 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
 #             shortcuts['create_rectangle'], 'objects',
 #             'Start drawing rectangles', enabled=True)
         createPosesMode = action(
-            'Draw Poses', self.setCreatePosesMode,
+            'Poses', self.setCreatePosesMode,
             shortcuts['create_pose'], 'objects',
             'Start drawing poses', enabled=True)
-        createLineMode = action(
-            'Draw Line', self.setCreateLineMode,
+        createAisleMode = action(
+            'Aisle', self.setCreateAisleMode,
             shortcuts['create_line'], 'objects',
             'Start drawing lines', enabled=True)
         editMode = action('&Edit Shapes', self.setEditMode,
@@ -385,34 +409,50 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         self.actions = struct(
             save=save, saveAs=saveAs, open=open_, close=close,
             lineColor=color1, fillColor=color2,
-            delete=delete, edit=edit, copy=copy,
+            delete=delete, edit=edit,
+            copy=copy,
             undoLastPoint=undoLastPoint, undo=undo,
             addPoint=addPoint,
-            createMode=createMode, editMode=editMode,
+            createModeShelves=createModeShelves,
+            createModeExclusion=createModeExclusion,
+            createModeClear=createModeClear,
+            createModeLightsOff=createModeLightsOff,
+            editMode=editMode,
 #             createRectangleMode=createRectangleMode,
-            createLineMode=createLineMode,
+            createAisleMode=createAisleMode,
             createPosesMode=createPosesMode,
             shapeLineColor=shapeLineColor, shapeFillColor=shapeFillColor,
             zoom=zoom, zoomIn=zoomIn, zoomOut=zoomOut, zoomOrg=zoomOrg,
             fitWindow=fitWindow, fitWidth=fitWidth,
             zoomActions=zoomActions,
-            fileMenuActions=(open_, opendir, save, saveAs, close, quit),
+            fileMenuActions=(open_,
+#                              opendir,
+                             save, saveAs, close, quit),
             tool=(),
-            editMenu=(edit, copy, delete, None, undo, undoLastPoint,
+            editMenu=(edit,
+                    copy,
+                      delete, None, undo, undoLastPoint,
                       None, color1, color2),
             menu=(
 #                 createMode, createRectangleMode, createLineMode,
-                createMode,
+                createModeShelves,
+                createModeExclusion,
+                createModeClear,
+                createModeLightsOff,
 #                 createRectangleMode,
-                createLineMode,
+                createAisleMode,
                 createPosesMode,
-                editMode, edit, copy,
+                editMode, edit,
+                copy,
                 delete, shapeLineColor, shapeFillColor,
                 undo, undoLastPoint, addPoint,
             ),
-            onLoadActive=(close, createMode,
+            onLoadActive=(close, createModeShelves,
+                          createModeExclusion,
+                          createModeClear,
+                          createModeLightsOff,
 #                           createRectangleMode,
-                            createLineMode,
+                            createAisleMode,
                             createPosesMode,
                             editMode),
             onShapesPresent=(saveAs, hideAll, showAll),
@@ -429,7 +469,9 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
             labelList=labelMenu,
         )
 
-        addActions(self.menus.file, (open_, opendir, self.menus.recentFiles,
+        addActions(self.menus.file, (open_,
+#                                      opendir,
+                                     self.menus.recentFiles,
                                      save, saveAs, close, None, quit))
         addActions(self.menus.help, (help,))
         addActions(self.menus.view, (
@@ -448,12 +490,20 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
 
         self.tools = self.toolbar('Tools')
         self.actions.tool = (
-            open_, opendir, openNextImg, openPrevImg, save,
-            None, createMode,
+            open_,
+#             opendir,
+#             openNextImg,
+#             openPrevImg,
+            save,
+            None, createModeShelves,
+            createModeExclusion,
+            createModeLightsOff,
+            createModeClear,
 #             createRectangleMode
-            createLineMode,
+            createAisleMode,
             createPosesMode,
-            copy, delete, editMode, undo, None,
+            copy,
+            delete, editMode, undo, None,
             zoomIn, zoom, zoomOut, fitWindow, fitWidth)
 
         self.statusBar().showMessage('%s started.' % __appname__)
@@ -540,7 +590,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         addActions(self.canvas.menus[0], menu)
         self.menus.edit.clear()
         actions = (
-            self.actions.createMode,
+            self.actions.createModeShelves,
 #             self.actions.createRectangleMode,
             self.actions.editMode,
         )
@@ -562,7 +612,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
     def setClean(self):
         self.dirty = False
         self.actions.save.setEnabled(False)
-        self.actions.createMode.setEnabled(True)
+        self.actions.createModeShelves.setEnabled(True)
 #         self.actions.createRectangleMode.setEnabled(True)
         title = __appname__
         if self.filename is not None:
@@ -628,36 +678,64 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         self.actions.undoLastPoint.setEnabled(drawing)
         self.actions.undo.setEnabled(not drawing)
 
-    def toggleDrawMode(self, edit=True, createMode='polygon'):
+    def toggleDrawMode(self, edit=True, createMode='polygon', bnr_type='shelves'):
         self.canvas.setEditing(edit)
         self.canvas.createMode = createMode
         self.createMode = createMode
-        if createMode == 'polygon':
-            self.actions.createMode.setEnabled(edit)
-#             self.actions.createRectangleMode.setEnabled(not edit)
-            self.actions.createLineMode.setEnabled(not edit)
+        self.bnr_type = bnr_type
+        if createMode == 'polygon' and bnr_type == 'shelves':
+            self.actions.createModeShelves.setEnabled(edit)
+            self.actions.createModeExclusion.setEnabled(not edit)
+            self.actions.createModeClear.setEnabled(not edit)
+            self.actions.createModeLightsOff.setEnabled(not edit)
+            self.actions.createAisleMode.setEnabled(not edit)
+            self.actions.createPosesMode.setEnabled(not edit)
+        elif createMode == 'polygon' and bnr_type == 'exclusionzone':
+            self.actions.createModeShelves.setEnabled(not edit)
+            self.actions.createModeExclusion.setEnabled(edit)
+            self.actions.createModeClear.setEnabled(not edit)
+            self.actions.createModeLightsOff.setEnabled(not edit)
+            self.actions.createAisleMode.setEnabled(not edit)
+            self.actions.createPosesMode.setEnabled(not edit)
+        elif createMode == 'polygon' and bnr_type == 'clearzone':
+            self.actions.createModeShelves.setEnabled(not edit)
+            self.actions.createModeExclusion.setEnabled(not edit)
+            self.actions.createModeClear.setEnabled(edit)
+            self.actions.createModeLightsOff.setEnabled(not edit)
+            self.actions.createAisleMode.setEnabled(not edit)
+            self.actions.createPosesMode.setEnabled(not edit)
+        elif createMode == 'polygon' and bnr_type == 'lightsoff':
+            self.actions.createModeShelves.setEnabled(not edit)
+            self.actions.createModeExclusion.setEnabled(not edit)
+            self.actions.createModeClear.setEnabled(not edit)
+            self.actions.createModeLightsOff.setEnabled(edit)
+            self.actions.createAisleMode.setEnabled(not edit)
             self.actions.createPosesMode.setEnabled(not edit)
         elif createMode == 'rectangle':
             self.actions.createMode.setEnabled(not edit)
-#             self.actions.createRectangleMode.setEnabled(edit)
             self.actions.createLineMode.setEnabled(not edit)
             self.actions.createPosesMode.setEnabled(not edit)
-        elif createMode == 'line':
-            self.actions.createMode.setEnabled(not edit)
-#             self.actions.createRectangleMode.setEnabled(not edit)
-            self.actions.createLineMode.setEnabled(edit)
+        elif createMode == 'line' and bnr_type =='aisle':
+            self.actions.createModeShelves.setEnabled(not edit)
+            self.actions.createModeExclusion.setEnabled(not edit)
+            self.actions.createModeClear.setEnabled(not edit)
+            self.actions.createModeLightsOff.setEnabled(not edit)
+            self.actions.createAisleMode.setEnabled(edit)
             self.actions.createPosesMode.setEnabled(not edit)
-        elif createMode == 'poses':
-            self.actions.createMode.setEnabled(not edit)
-#             self.actions.createRectangleMode.setEnabled(not edit)
-            self.actions.createLineMode.setEnabled(not edit)
+        elif createMode == 'poses' and bnr_type == 'poses':
+            self.actions.createModeShelves.setEnabled(not edit)
+            self.actions.createModeExclusion.setEnabled(not edit)
+            self.actions.createModeClear.setEnabled(not edit)
+            self.actions.createModeLightsOff.setEnabled(not edit)
+            self.actions.createAisleMode.setEnabled(not edit)
             self.actions.createPosesMode.setEnabled(edit)
-        else:
-            raise ValueError
+
         if edit:
-            self.actions.createMode.setEnabled(edit)
-#             self.actions.createRectangleMode.setEnabled(edit)
-            self.actions.createLineMode.setEnabled(edit)
+            self.actions.createModeShelves.setEnabled(edit)
+            self.actions.createModeExclusion.setEnabled(edit)
+            self.actions.createModeClear.setEnabled(edit)
+            self.actions.createModeLightsOff.setEnabled(edit)
+            self.actions.createAisleMode.setEnabled(edit)
             self.actions.createPosesMode.setEnabled(edit)
         self.actions.editMode.setEnabled(not edit)
 
@@ -665,13 +743,22 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         self.toggleDrawMode(False, createMode='rectangle')
     
     def setCreatePosesMode(self):
-        self.toggleDrawMode(False, createMode='poses')
+        self.toggleDrawMode(False, createMode='poses', bnr_type='poses')
 
-    def setCreateLineMode(self):
-        self.toggleDrawMode(False, createMode='line')
+    def setCreateAisleMode(self):
+        self.toggleDrawMode(False, createMode='line', bnr_type='aisle')
 
-    def setCreateMode(self):
-        self.toggleDrawMode(False, createMode='polygon')
+    def setCreateModeShelves(self):
+        self.toggleDrawMode(False, createMode='polygon', bnr_type='shelves')
+
+    def setCreateModeExclusion(self):
+        self.toggleDrawMode(False, createMode='polygon', bnr_type='exclusionzone')
+
+    def setCreateModeLightsOff(self):
+        self.toggleDrawMode(False, createMode='polygon', bnr_type='lightsoff')
+
+    def setCreateModeClear(self):
+        self.toggleDrawMode(False, createMode='polygon', bnr_type='clearzone')
 
     def setEditMode(self):
         self.toggleDrawMode(True)
@@ -784,7 +871,8 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
 
     def remLabel(self, shape):
         item = self.labelList.get_item_from_shape(shape)
-        self.labelList.takeItem(self.labelList.row(item))
+        item = self.labelList.takeItem(self.labelList.row(item))
+        self.labelList.delete_item_from_itemsToShapes(item)
         self.toggleFlags()
 
     def loadShapes(self, shapes):
@@ -825,7 +913,6 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         for each in self.uniq_flags:
             item = self.flag_widget.findItems(each, QtCore.Qt.MatchRegExp)
             item[0].setFlags(item[0].flags() | Qt.ItemIsEnabled & Qt.ItemIsUserCheckable)
-#             item[0].setFlags(item[0].flags() | )
             item[0].setCheckState(Qt.Checked)
 
     def saveLabels(self, filename):
@@ -1056,16 +1143,18 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         if self._config['keep_prev']:
             self.loadShapes(prev_shapes)
         # TODO move this settings
-        flags = {"aisle": True, "poses": True, "clear_zone": True, "exclusion_zone": True}
+        flags = {"aisle": True,
+                 "poses": True,
+                 "clearzone": True,
+                 "exclusionzone": True,
+                 "lightsoff": True,
+                 "shelves": True}
         if self.labelFile:
             self.loadLabels(self.labelFile.shapes)
             self.loadFlags(flags, True)
         else:
             self.loadFlags(flags, False)
-#             if self.labelFile.flags is not None:
-#         self.loadFlags(flags)
         self.map_meta_button.setEnabled(True)
-        self.labelDialog.loadFlags(flags)
         self.setClean()
         self.canvas.setEnabled(True)
         self.adjustScale(initial=True)
@@ -1237,7 +1326,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
             self.errorMessage(
                 'No objects labeled',
                 'You must label at least one object to save the file.')
-            return False
+            return True
         return True
 
     def mayContinue(self):

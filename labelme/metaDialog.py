@@ -11,7 +11,6 @@ from labelme import logger
 
 QT5 = QT_VERSION[0] == '5'  # NOQA
 
-from labelme.lib import alphanumericValidator
 from labelme.lib import newIcon
 from labelme.lib import getUUID
 

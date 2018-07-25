@@ -1,5 +1,6 @@
 from math import sqrt
 import os.path as osp
+from string import ascii_uppercase
 import re
 import uuid
 
@@ -90,3 +91,24 @@ def fmtShortcut(text):
 
 def getUUID():
     return str(uuid.uuid1())
+
+def generate_label(bnr_type=None,label=None):
+    if bnr_type == 'aisle':
+        if label:
+            first_letter = label[0]
+            second_letter = label[1]
+            num = int(label[-2:])
+            if num == 99:
+                second_letter = ascii_uppercase[ascii_uppercase.find(second_letter)+1]
+                num = 00
+            else:
+                num = num + 1
+            return first_letter + second_letter + str(num).zfill(2)
+        else:
+            return ascii_uppercase[0] * 2 + '00'
+    else:
+        if label:
+            num = int(label[-4:])
+            return bnr_type[0:2] + str(int(bnr_type[-4:])).zfill(4)
+        else:
+            return bnr_type[0:2].upper() + '0000'

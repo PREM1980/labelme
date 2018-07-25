@@ -9,6 +9,7 @@ QT5 = QT_VERSION[0] == '5'  # NOQA
 
 from labelme.lib import labelValidator
 from labelme.lib import newIcon
+from labelme.lib import generate_label
 
 
 # TODO(unknown):
@@ -40,7 +41,7 @@ class LabelDialog(QtWidgets.QDialog):
         self.pts_display = QtWidgets.QLabel('Points')
         self.uuid_edit = QtWidgets.QLineEdit()
         self.label_edit = QtWidgets.QLineEdit()
-        self.bnr_type_edit = QtWidgets.QComboBox()        
+        self.bnr_type_edit = QtWidgets.QLineEdit()
         self.cust_display_name_edit = QtWidgets.QLineEdit()
         self.cust_display_name_edit.editingFinished.connect(self.postProcess)
         self.pts_display_edit = QtWidgets.QLineEdit()
@@ -70,8 +71,8 @@ class LabelDialog(QtWidgets.QDialog):
         self.setLayout(grid)
         self.resize(QtCore.QSize(600,400))
 
-    def loadFlags(self, flags):
-        self.bnr_type_edit.addItems(flags.keys())
+#     def loadFlags(self, flags):
+#         self.bnr_type_edit.addItems(flags.keys())
 
     def validate(self):
         text = self.label_edit.text()
@@ -91,24 +92,28 @@ class LabelDialog(QtWidgets.QDialog):
         self.cust_display_name_edit.setText(text)
     
     def popUp(self, item=None):
-        
         if item is None:
             self.uuid_edit.setText(str(uuid.uuid1()))
             self.uuid_edit.setReadOnly(True)
-            self.label_edit.setText('')
+            uniq_labels = self.parent.labelList.get_uniq_labels()
+            if self.parent.bnr_type in uniq_labels:
+                uniq_labels = sorted(uniq_labels[self.parent.bnr_type])
+                label = generate_label(self.parent.bnr_type, uniq_labels[-1])
+            else:
+                label = generate_label(self.parent.bnr_type)
+            self.label_edit.setText(label)
             self.cust_display_name_edit.setText('')
+            self.bnr_type_edit.setText(self.parent.bnr_type)
+            self.bnr_type_edit.setReadOnly(True)
         else:
             shape = self.parent.labelList.get_shape_from_item(item)
             pts = [[each.x(), each.y()] for each in shape.points]
             self.pts_display_edit.setText(' , '.join(str(each) for each in pts))
             self.uuid_edit.setText(str(shape.uuid))
             self.label_edit.setText(shape.label)
-            index = self.bnr_type_edit.findText(shape.bnr_type, QtCore.Qt.MatchFixedString)
-            if index >= 0:
-                self.bnr_type_edit.setCurrentIndex(index)
-    #         self.type_edit.setText(item.bnr_type)    
+            self.bnr_type_edit.setText(shape.bnr_type)
             self.cust_display_name_edit.setText(shape.cust_display_name)
         return (self.uuid_edit.text(),
                 self.label_edit.text(),
-                self.bnr_type_edit.currentText(),
+                self.bnr_type_edit.text(),
                 self.cust_display_name_edit.text())  if self.exec_() else None
