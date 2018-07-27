@@ -5,7 +5,6 @@ from qtpy import QT_VERSION
 from qtpy import QtCore
 from qtpy import QtGui
 from qtpy import QtWidgets
-from PyQt5.Qt import QLabel, QMessageBox, QRegExp
 from geopy.geocoders import Nominatim
 from labelme import logger
 

@@ -3,7 +3,8 @@ from qtpy import QT_VERSION
 from qtpy import QtCore
 from qtpy import QtGui
 from qtpy import QtWidgets
-from PyQt5.Qt import QLabel
+# from PyQt5.Qt import QLabel
+# from qtpy import QLabel
 
 QT5 = QT_VERSION[0] == '5'  # NOQA
 

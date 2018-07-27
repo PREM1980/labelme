@@ -6,7 +6,8 @@ from qtpy import QtWidgets
 from labelme.compat import QT5
 from labelme.lib import distance
 from labelme.shape import Shape
-from PyQt5.Qt import QPointF
+# from PyQt4.Qt import QPointF
+# from qtpy import QPoint
 
 
 # TODO(unknown):
@@ -176,7 +177,7 @@ class Canvas(QtWidgets.QWidget):
                 v_norm = math.sqrt(dx**2+dy**2)
                 distance = 50
                 point_on_line = [self.line[0].x() + distance * dx / v_norm, self.line[0].y() + distance * dy / v_norm]
-                self.line[1] = QPointF(point_on_line[0], point_on_line[1])
+                self.line[1] = QtCore.QPointF(point_on_line[0], point_on_line[1])
                 self.line.bnr_type = 'poses'
             else:
                 raise ValueError

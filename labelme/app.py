@@ -1,4 +1,4 @@
-import argparse
+import argparse 
 import codecs
 import functools
 import os.path
@@ -11,6 +11,7 @@ from qtpy import QtCore
 from qtpy.QtCore import Qt
 from qtpy import QtGui
 from qtpy import QtWidgets
+
 
 from labelme import __appname__
 from labelme import __version__
@@ -178,7 +179,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         self.searchwidget.setPlaceholderText('search labels')
         self.searchwidget.editingFinished.connect(self.searchWidgetChanged)
 #         self.searchwidget.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        self.searchwidget.setClearButtonEnabled(True)
+#         self.searchwidget.setClearButtonEnabled(True)
 #         self.searchwidget.addAction(QAction)
         self.editButton = QtWidgets.QToolButton()
         self.editButton.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
@@ -215,17 +216,17 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         self.dock.setObjectName('Labels')
         self.dock.setWidget(self.labelListContainer)
 
-        self.fileListWidget = QtWidgets.QListWidget()
-        self.fileListWidget.itemSelectionChanged.connect(
-            self.fileSelectionChanged)
-        filelistLayout = QtWidgets.QVBoxLayout()
-        filelistLayout.setContentsMargins(0, 0, 0, 0)
-        filelistLayout.addWidget(self.fileListWidget)
-        fileListContainer = QtWidgets.QWidget()
-        fileListContainer.setLayout(filelistLayout)
-        self.filedock = QtWidgets.QDockWidget(u'File List', self)
-        self.filedock.setObjectName(u'Files')
-        self.filedock.setWidget(fileListContainer)
+#         self.fileListWidget = QtWidgets.QListWidget()
+#         self.fileListWidget.itemSelectionChanged.connect(
+#             self.fileSelectionChanged)
+#         filelistLayout = QtWidgets.QVBoxLayout()
+#         filelistLayout.setContentsMargins(0, 0, 0, 0)
+#         filelistLayout.addWidget(self.fileListWidget)
+#         fileListContainer = QtWidgets.QWidget()
+#         fileListContainer.setLayout(filelistLayout)
+#         self.filedock = QtWidgets.QDockWidget(u'File List', self)
+#         self.filedock.setObjectName(u'Files')
+#         self.filedock.setWidget(fileListContainer)
 
         self.zoomWidget = ZoomWidget()
         self.colorDialog = ColorDialog(parent=self)
@@ -254,8 +255,8 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         self.addDockWidget(Qt.RightDockWidgetArea, self.cur_pos_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.flag_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.dock)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.filedock)
-        self.filedock.setFeatures(QtWidgets.QDockWidget.DockWidgetFloatable)
+#         self.addDockWidget(Qt.RightDockWidgetArea, self.filedock)
+#         self.filedock.setFeatures(QtWidgets.QDockWidget.DockWidgetFloatable)
 
         self.dockFeatures = (QtWidgets.QDockWidget.DockWidgetClosable |
                              QtWidgets.QDockWidget.DockWidgetFloatable)
