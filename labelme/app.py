@@ -291,16 +291,16 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
                         'Choose polygon fill color')
 
         createModeShelves = action('Shelves', self.setCreateModeShelves,
-                            shortcuts['create_polygon'], 'objects',
+                            shortcuts['create_polygon'], 'S',
                             'Start drawing polygons', enabled=True)
         createModeExclusion = action('Excl zone', self.setCreateModeExclusion,
-                            shortcuts['create_polygon'], 'objects',
+                            shortcuts['create_polygon'], 'E',
                             'Start drawing polygons', enabled=True)
         createModeClear = action('Clear zone', self.setCreateModeClear,
-                            shortcuts['create_polygon'], 'objects',
+                            shortcuts['create_polygon'], 'C',
                             'Start drawing polygons', enabled=True)
         createModeLightsOff = action('Lights off', self.setCreateModeLightsOff,
-                            shortcuts['create_polygon'], 'objects',
+                            shortcuts['create_polygon'], 'L',
                             'Start drawing polygons', enabled=True)
 #         createRectangleMode = action(
 #             'Draw Rectangle', self.setCreateRectangleMode,
@@ -308,11 +308,11 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
 #             'Start drawing rectangles', enabled=True)
         createPosesMode = action(
             'Poses', self.setCreatePosesMode,
-            shortcuts['create_pose'], 'objects',
+            shortcuts['create_pose'], 'P',
             'Start drawing poses', enabled=True)
         createAisleMode = action(
             'Aisle', self.setCreateAisleMode,
-            shortcuts['create_line'], 'objects',
+            shortcuts['create_line'], 'aisle',
             'Start drawing lines', enabled=True)
         editMode = action('&Edit Shapes', self.setEditMode,
                           shortcuts['edit_polygon'], 'edit',
@@ -1067,11 +1067,11 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
     def loadFile(self, filename=None):
         """Load the specified file, or the last opened file if None."""
         # changing fileListWidget loads file
-        if (filename in self.imageList and
-                self.fileListWidget.currentRow() !=
-                self.imageList.index(filename)):
-            self.fileListWidget.setCurrentRow(self.imageList.index(filename))
-            return
+#         if (filename in self.imageList and
+#                 self.fileListWidget.currentRow() !=
+#                 self.imageList.index(filename)):
+#             self.fileListWidget.setCurrentRow(self.imageList.index(filename))
+#             return
 
         self.resetState()
         self.canvas.setEnabled(False)
