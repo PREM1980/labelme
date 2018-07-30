@@ -160,7 +160,7 @@ class MetaDialog(QtWidgets.QDialog):
             msg.exec_()
             
     def _get_lat_long(self, addr):
-        geolocator = Nominatim()
+        geolocator = Nominatim(user_agent="annotation_locations")
         try:
             geolocator.geocode(addr, timeout=10, exactly_one=False)
         except Exception as e:

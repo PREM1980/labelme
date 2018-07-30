@@ -175,34 +175,34 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
 
         listLayout = QtWidgets.QVBoxLayout()
         listLayout.setContentsMargins(0, 0, 0, 0)
-        self.searchwidget = QtWidgets.QLineEdit()
-        self.searchwidget.setPlaceholderText('search labels')
-        self.searchwidget.editingFinished.connect(self.searchWidgetChanged)
+#         self.searchwidget = QtWidgets.QLineEdit()
+#         self.searchwidget.setPlaceholderText('search labels')
+#         self.searchwidget.editingFinished.connect(self.searchWidgetChanged)
 #         self.searchwidget.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
 #         self.searchwidget.setClearButtonEnabled(True)
 #         self.searchwidget.addAction(QAction)
         self.editButton = QtWidgets.QToolButton()
         self.editButton.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        listLayout.addWidget(self.searchwidget)  # 0, Qt.AlignCenter)
+#         listLayout.addWidget(self.searchwidget)  # 0, Qt.AlignCenter)
         listLayout.addWidget(self.editButton)  # 0, Qt.AlignCenter)
         listLayout.addWidget(self.labelList)
         self.labelListContainer = QtWidgets.QWidget()
         self.labelListContainer.setLayout(listLayout)
 
-        self.cur_pos_dock = QtWidgets.QDockWidget('Cursor position', self)
-        self.cur_pos_dock.setObjectName('cursor')
+#         self.cur_pos_dock = QtWidgets.QDockWidget('Cursor position', self)
+#         self.cur_pos_dock.setObjectName('cursor')
         self.cur_pos_label = QtWidgets.QLabel()
         self.cur_pos_label.setStyleSheet('color: red')
         self.cur_pos_font = QtGui.QFont()
         self.cur_pos_font.setBold(True)
         self.cur_pos_label.setFont(self.cur_pos_font)
-        self.cur_pos_dock.setWidget(self.cur_pos_label)
-        self.map_meta_dock = QtWidgets.QDockWidget('Map Metadata', self)
-        self.map_meta_dock.setObjectName('map_metadata')
+#         self.cur_pos_dock.setWidget(self.cur_pos_label)
+#         self.map_meta_dock = QtWidgets.QDockWidget('Map Metadata', self)
+#         self.map_meta_dock.setObjectName('map_metadata')
         self.map_meta_button = QtWidgets.QPushButton('Click here', self)
         self.map_meta_button.setDisabled(True)
         self.map_meta_button.clicked.connect(self.meta_dialog)
-        self.map_meta_dock.setWidget(self.map_meta_button)
+#         self.map_meta_dock.setWidget(self.map_meta_button)
 
         self.flag_dock = self.flag_widget = None
         self.flag_dock = QtWidgets.QDockWidget('Filters', self)
@@ -234,6 +234,17 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         self.canvas = self.labelList.canvas = Canvas()
         self.canvas.zoomRequest.connect(self.zoomRequest)
 
+        vlayout = QtWidgets.QVBoxLayout()
+        hlayout = QtWidgets.QHBoxLayout()
+        imagehlayout = QtWidgets.QHBoxLayout()
+        hlayout.setContentsMargins(0, 0, 0, 0)
+        hlayout.addWidget(self.cur_pos_label)
+        hlayout.addWidget(self.map_meta_button)
+        hlayout.addStretch(1)
+        vlayout.addLayout((hlayout))
+        testContainer = QtWidgets.QWidget()
+        testContainer.setLayout(vlayout)
+
         scrollArea = QtWidgets.QScrollArea()
         scrollArea.setWidget(self.canvas)
         scrollArea.setWidgetResizable(True)
@@ -249,10 +260,12 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         self.canvas.drawingPolygon.connect(self.toggleDrawingSensitive)
         self.canvas.cursorPos.connect(self.setCursorPos)
 
-        self.setCentralWidget(scrollArea)
+        imagehlayout.addWidget(scrollArea)
+        vlayout.addLayout(imagehlayout)
+        self.setCentralWidget(testContainer)
 
-        self.addDockWidget(Qt.RightDockWidgetArea, self.map_meta_dock)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.cur_pos_dock)
+#         self.addDockWidget(Qt.RightDockWidgetArea, self.map_meta_dock)
+#         self.addDockWidget(Qt.RightDockWidgetArea, self.cur_pos_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.flag_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.dock)
 #         self.addDockWidget(Qt.RightDockWidgetArea, self.filedock)
@@ -291,16 +304,16 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
                         'Choose polygon fill color')
 
         createModeShelves = action('Shelves', self.setCreateModeShelves,
-                            shortcuts['create_polygon'], 'S',
+                            shortcuts['create_shelves'], 'S',
                             'Start drawing polygons', enabled=True)
         createModeExclusion = action('Excl zone', self.setCreateModeExclusion,
-                            shortcuts['create_polygon'], 'E',
+                            shortcuts['create_exclusion'], 'E',
                             'Start drawing polygons', enabled=True)
         createModeClear = action('Clear zone', self.setCreateModeClear,
-                            shortcuts['create_polygon'], 'C',
+                            shortcuts['create_clear'], 'C',
                             'Start drawing polygons', enabled=True)
         createModeLightsOff = action('Lights off', self.setCreateModeLightsOff,
-                            shortcuts['create_polygon'], 'L',
+                            shortcuts['create_lights'], 'L',
                             'Start drawing polygons', enabled=True)
 #         createRectangleMode = action(
 #             'Draw Rectangle', self.setCreateRectangleMode,
@@ -312,7 +325,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
             'Start drawing poses', enabled=True)
         createAisleMode = action(
             'Aisle', self.setCreateAisleMode,
-            shortcuts['create_line'], 'aisle',
+            shortcuts['create_aisle'], 'aisle',
             'Start drawing lines', enabled=True)
         editMode = action('&Edit Shapes', self.setEditMode,
                           shortcuts['edit_polygon'], 'edit',
@@ -1022,6 +1035,7 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         bar.setValue(bar.value() + bar.singleStep() * units)
 
     def setZoom(self, value):
+        print 'setZoom'
         self.actions.fitWidth.setChecked(False)
         self.actions.fitWindow.setChecked(False)
         self.zoomMode = self.MANUAL_ZOOM

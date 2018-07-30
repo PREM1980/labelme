@@ -30,6 +30,11 @@ shortcuts:
   create_rectangle: Ctrl+R
   create_line: Ctrl+L
   create_pose: Ctrl+P
+  create_aisle: Ctrl + A
+  create_shelves: Ctrl + S
+  create_clear: Ctrl + C
+  create_lights: Ctrl + L
+  create_exclusion: Ctrl + E
   edit_polygon: Ctrl+J
   delete_polygon: Delete
   duplicate_polygon: Ctrl+D
