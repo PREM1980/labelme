@@ -1035,7 +1035,6 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         bar.setValue(bar.value() + bar.singleStep() * units)
 
     def setZoom(self, value):
-        print 'setZoom'
         self.actions.fitWidth.setChecked(False)
         self.actions.fitWindow.setChecked(False)
         self.zoomMode = self.MANUAL_ZOOM

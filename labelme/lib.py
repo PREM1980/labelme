@@ -109,6 +109,7 @@ def generate_label(bnr_type=None,label=None):
     else:
         if label:
             num = int(label[-4:])
-            return bnr_type[0:2] + str(int(bnr_type[-4:])).zfill(4)
+            num = num + 1
+            return bnr_type[0:2].upper() + str(int(num)).zfill(4)
         else:
             return bnr_type[0:2].upper() + '0000'

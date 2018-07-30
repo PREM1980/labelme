@@ -318,6 +318,7 @@ class Canvas(QtWidgets.QWidget):
                     # Create new shape.
                     self.current = Shape()
                     self.current.addPoint(pos)
+                    self.line.bnr_type = ''
                     self.line.points = [pos, pos]
                     self.setHiding()
                     self.drawingPolygon.emit(True)
