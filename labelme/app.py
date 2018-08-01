@@ -880,6 +880,12 @@ class MainWindow(QtWidgets.QMainWindow, WindowMixin):
         item.setCheckState(Qt.Checked)
         self.labelList.itemsToShapes.append((item, shape))
         self.labelList.addItem(item)
+        # TODO - Fix issue related to overlapping
+        checkbox = QtWidgets.QCheckBox('')
+        checkbox.setChecked(True)
+        checkbox.minimumSizeHint()
+        checkbox.setLayoutDirection(Qt.RightToLeft)
+        self.labelList.setItemWidget(item, checkbox)
         for action in self.actions.onShapesPresent:
             action.setEnabled(True)
 
