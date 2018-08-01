@@ -137,6 +137,7 @@ class Canvas(QtWidgets.QWidget):
 
         self.prevMovePoint = pos
         self.restoreCursor()
+        angleDeg = 0
 
         # Polygon drawing.
         if self.drawing():
@@ -194,6 +195,7 @@ class Canvas(QtWidgets.QWidget):
             elif self.selectedShape:
                 self.selectedShapeCopy = self.selectedShape.copy()
                 self.repaint()
+            self.cursorPos.emit(pos.x(), pos.y(), angleDeg)
             return
 
         # Polygon/Vertex moving.
@@ -208,6 +210,7 @@ class Canvas(QtWidgets.QWidget):
                 self.boundedMoveShape(self.selectedShape, pos)
                 self.repaint()
                 self.movingShape = True
+            self.cursorPos.emit(pos.x(), pos.y(), angleDeg)
             return
 
         # Just hovering over the canvas, 2 posibilities:
@@ -251,7 +254,6 @@ class Canvas(QtWidgets.QWidget):
             self.hVertex, self.hShape, self.hEdge = None, None, None
         self.edgeSelected.emit(self.hEdge is not None)
 
-        angleDeg = 0
         # Display angle if hover a poses
         if self.hShape:
             if self.hShape.bnr_type == 'poses':
@@ -261,7 +263,6 @@ class Canvas(QtWidgets.QWidget):
         if self.current:
             angleDeg = math.atan2(pos.y() - self.current[-1].y(), pos.x() - self.current[-1].x()) * 180 / math.pi;
         self.cursorPos.emit(pos.x(), pos.y(), angleDeg)
-
 
     def addPointToEdge(self):
         if (self.hShape is None and
